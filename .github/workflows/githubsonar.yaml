@@ -38,13 +38,6 @@ jobs:
             echo "language=unknown" >> $GITHUB_ENV
           fi
 
-      # Paso 3: Instalar SonarQube Scanner
-      - name: Install SonarQube Scanner
-        run: |
-          curl -Ls https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip -o sonar-scanner.zip
-          unzip sonar-scanner.zip
-          echo "$(pwd)/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
-
       # Paso 4: Ejecutar el análisis de SonarQube y guardar el informe como JSON
       - name: Run SonarQube Scan and Save Report
         run: |
