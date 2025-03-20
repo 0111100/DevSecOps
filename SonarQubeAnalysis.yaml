@@ -47,7 +47,7 @@ stages:
               echo "$(pwd)/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
             displayName: "Install SonarQube Scanner"
 
-          # Ejecutamos el análisis dependiendo del lenguaje detectado
+          # Ejecutamos el analisis dependiendo del lenguaje detectado
           - script: |
               case "$language" in
                 java)
@@ -76,7 +76,7 @@ stages:
                   dotnet sonarscanner end /d:sonar.login=$SONAR_TOKEN
                   ;;
                 *)
-                  echo "❌ No supported language detected!"
+                  echo " No supported language detected!"
                   exit 1
                   ;;
               esac
