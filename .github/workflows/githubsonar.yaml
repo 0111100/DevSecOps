@@ -45,8 +45,8 @@ jobs:
           unzip sonar-scanner.zip
           echo "$(pwd)/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
 
-      # Paso 4: Ejecutar el análisis de SonarQube
-      - name: Run SonarQube Scan
+      # Paso 4: Ejecutar el análisis de SonarQube y guardar el informe como JSON
+      - name: Run SonarQube Scan and Save Report
         run: |
           case "$language" in
             java)
@@ -80,16 +80,12 @@ jobs:
               ;;
           esac
 
-      # Paso 5: Descargar el informe de SonarQube y guardarlo como artefacto
-      - name: Download SonarQube Report
-        run: |
-          curl -L -u $SONAR_TOKEN: $SONAR_HOST_URL/api/project_branches/list?project=$GITHUB_REPOSITORY > sonar-report.json
-        continue-on-error: true
-
-      # Paso 6: Subir el informe como artefacto a GitHub
-      - name: Upload SonarQube Report as Artifact
+          # Descargar el informe en formato JSON (esto depende de cómo SonarQube esté configurado para generar el informe)
+          curl -u $SONAR_TOKEN: -o sonar-report.json "$SONAR_HOST_URL/api/issues/search?componentKeys=my-project&ps=500"
+          
+      # Paso 5: Subir el informe JSON a GitHub
+      - name: Upload SonarQube Report as JSON
         uses: actions/upload-artifact@v2
         with:
           name: sonar-report
           path: sonar-report.json
-
