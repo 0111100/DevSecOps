@@ -76,9 +76,15 @@ jobs:
           # Descargar el informe en formato JSON (esto depende de cómo SonarQube esté configurado para generar el informe)
           curl -u $SONAR_TOKEN: -o sonar-report.json "$SONAR_HOST_URL/api/issues/search?componentKeys=my-project&ps=500"
           
-      # Paso 5: Subir el informe JSON a GitHub
-      - name: Upload SonarQube Report as JSON
-        uses: actions/upload-artifact@v2
-        with:
-          name: sonar-report
-          path: sonar-report.json
+      # Paso 4: Guardar el informe JSON directamente en el repositorio
+      
+      - name: Commit SonarQube Report to GitHub
+        run: |
+          git config --global user.name "Your Name"
+          git config --global user.email "your-email@example.com"
+          git checkout -b sonar-report
+          mv sonar-report.json path/to/save/sonar-report.json
+          git add path/to/save/sonar-report.json
+          git commit -m "Add SonarQube report"
+          git push --set-upstream origin sonar-report
+
