@@ -37,7 +37,7 @@ namespace SonarQubeTestProject
             // Error: Se debe eliminar el metodo vacio o usarlo correctamente
             if (message != null)
             {
-                Console.WriteLine(message);
+                Console.WriteLine(message)
             }
         }
     }

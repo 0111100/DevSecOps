@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Paso 1: Clonar el codigo fuente
+      # Paso 1: Clonar el código fuente
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      # Paso 2: Detectar el lenguaje y configurar el analisis
+      # Paso 2: Detectar el lenguaje y configurar el análisis
       - name: Detect Language
         run: |
           if [ -f "pom.xml" ]; then
@@ -45,7 +45,7 @@ jobs:
           unzip sonar-scanner.zip
           echo "$(pwd)/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
 
-      # Paso 4: Ejecutar el analisis dependiendo del lenguaje detectado
+      # Paso 4: Ejecutar el análisis de SonarQube
       - name: Run SonarQube Scan
         run: |
           case "$language" in
