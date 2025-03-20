@@ -38,34 +38,34 @@ jobs:
             echo "language=unknown" >> $GITHUB_ENV
           fi
 
-      # Paso 4: Ejecutar el análisis de SonarQube y guardar el informe como JSON
+      # Paso 3: Ejecutar el análisis de SonarQube
       - name: Run SonarQube Scan and Save Report
         run: |
           case "$language" in
             java)
-              mvn -B clean verify sonar:sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+              mvn -B clean verify sonar:sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONARQUBE_USER_TOKEN
               ;;
             javascript)
-              npx sonarqube-scanner -Dsonar.projectKey=my-node-project -Dsonar.sources=src -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+              npx sonarqube-scanner -Dsonar.projectKey=my-node-project -Dsonar.sources=src -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONARQUBE_USER_TOKEN
               ;;
             python)
-              sonar-scanner -Dsonar.projectKey=my-python-project -Dsonar.sources=. -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+              sonar-scanner -Dsonar.projectKey=my-python-project -Dsonar.sources=. -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONARQUBE_USER_TOKEN
               ;;
             cpp)
               build-wrapper-linux-x86-64 --out-dir bw-output make
-              sonar-scanner -Dsonar.projectKey=my-cpp-project -Dsonar.sources=. -Dsonar.cfamily.build-wrapper-output=bw-output -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+              sonar-scanner -Dsonar.projectKey=my-cpp-project -Dsonar.sources=. -Dsonar.cfamily.build-wrapper-output=bw-output -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONARQUBE_USER_TOKEN
               ;;
             go)
-              sonar-scanner -Dsonar.projectKey=my-go-project -Dsonar.sources=. -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+              sonar-scanner -Dsonar.projectKey=my-go-project -Dsonar.sources=. -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONARQUBE_USER_TOKEN
               ;;
             php)
-              sonar-scanner -Dsonar.projectKey=my-php-project -Dsonar.sources=. -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+              sonar-scanner -Dsonar.projectKey=my-php-project -Dsonar.sources=. -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONARQUBE_USER_TOKEN
               ;;
             dotnet)
               dotnet build
-              dotnet sonarscanner begin /k:"my-dotnet-project" /d:sonar.login=$SONAR_TOKEN /d:sonar.host.url=$SONAR_HOST_URL
+              dotnet sonarscanner begin /k:"my-dotnet-project" /d:sonar.login=$SONARQUBE_USER_TOKEN /d:sonar.host.url=$SONAR_HOST_URL
               dotnet build
-              dotnet sonarscanner end /d:sonar.login=$SONAR_TOKEN
+              dotnet sonarscanner end /d:sonar.login=$SONARQUBE_USER_TOKEN
               ;;
             *)
               echo "No supported language detected!"
@@ -73,18 +73,16 @@ jobs:
               ;;
           esac
 
-          # Descargar el informe en formato JSON (esto depende de cómo SonarQube esté configurado para generar el informe)
-          curl -u $SONAR_TOKEN: -o sonar-report.json "$SONAR_HOST_URL/api/issues/search?componentKeys=my-project&ps=500"
-          
+          # Descargar el informe en formato JSON desde la API de SonarQube
+          curl -u $SONARQUBE_USER_TOKEN: -o sonar-report.json "$SONAR_HOST_URL/api/issues/search?componentKeys=my-project&ps=500"
+
       # Paso 4: Guardar el informe JSON directamente en el repositorio
-      
       - name: Commit SonarQube Report to GitHub
         run: |
-          git config --global user.name "Your Name"
-          git config --global user.email "your-email@example.com"
+          git config --global user.name "0111100"
+          git config --global user.email "alexpena3107@gmail.com"
           git checkout -b sonar-report
           mv sonar-report.json path/to/save/sonar-report.json
           git add path/to/save/sonar-report.json
           git commit -m "Add SonarQube report"
           git push --set-upstream origin sonar-report
-
