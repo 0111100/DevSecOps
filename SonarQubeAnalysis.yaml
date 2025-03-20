@@ -1,0 +1,144 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: SonarQubeScan
+    displayName: SonarQube Analysis
+    jobs:
+      - job: SonarQubeJob
+        displayName: Run SonarQube Scan
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: Checkout@2
+            name: Checkout Code
+            displayName: "Checkout code"
+
+          # Detectamos el lenguaje y configuramos el analisis de SonarQube
+          - script: |
+              if [ -f "pom.xml" ]; then
+                echo "language=java" >> $GITHUB_ENV
+              elif [ -f "package.json" ]; then
+                echo "language=javascript" >> $GITHUB_ENV
+              elif [ -f "requirements.txt" ] || ls *.py 1> /dev/null 2>&1; then
+                echo "language=python" >> $GITHUB_ENV
+              elif [ -f "Makefile" ] || ls *.c *.cpp 1> /dev/null 2>&1; then
+                echo "language=cpp" >> $GITHUB_ENV
+              elif [ -f "go.mod" ]; then
+                echo "language=go" >> $GITHUB_ENV
+              elif [ -f "composer.json" ]; then
+                echo "language=php" >> $GITHUB_ENV
+              elif ls *.csproj 1> /dev/null 2>&1; then
+                echo "language=dotnet" >> $GITHUB_ENV
+              else
+                echo "language=unknown" >> $GITHUB_ENV
+              fi
+            displayName: "Detect Language"
+
+          # Instalar SonarQube Scanner
+          - script: |
+              curl -Ls https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip -o sonar-scanner.zip
+              unzip sonar-scanner.zip
+              echo "$(pwd)/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
+            displayName: "Install SonarQube Scanner"
+
+          # Ejecutamos el análisis dependiendo del lenguaje detectado
+          - script: |
+              case "$language" in
+                java)
+                  mvn -B clean verify sonar:sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+                  ;;
+                javascript)
+                  npx sonarqube-scanner -Dsonar.projectKey=my-node-project -Dsonar.sources=src -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+                  ;;
+                python)
+                  sonar-scanner -Dsonar.projectKey=my-python-project -Dsonar.sources=. -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+                  ;;
+                cpp)
+                  build-wrapper-linux-x86-64 --out-dir bw-output make
+                  sonar-scanner -Dsonar.projectKey=my-cpp-project -Dsonar.sources=. -Dsonar.cfamily.build-wrapper-output=bw-output -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+                  ;;
+                go)
+                  sonar-scanner -Dsonar.projectKey=my-go-project -Dsonar.sources=. -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+                  ;;
+                php)
+                  sonar-scanner -Dsonar.projectKey=my-php-project -Dsonar.sources=. -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+                  ;;
+                dotnet)
+                  dotnet build
+                  dotnet sonarscanner begin /k:"my-dotnet-project" /d:sonar.login=$SONAR_TOKEN /d:sonar.host.url=$SONAR_HOST_URL
+                  dotnet build
+                  dotnet sonarscanner end /d:sonar.login=$SONAR_TOKEN
+                  ;;
+                *)
+                  echo "❌ No supported language detected!"
+                  exit 1
+                  ;;
+              esac
+            displayName: "Run SonarQube Scan"
+
+  - stage: AzureFunctionsBuild
+    displayName: Build Azure Functions
+    jobs:
+      - job: BuildAzureFunctions
+        displayName: Build azure functions
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - script: |
+              dotnet restore src/Mcv.Functions/Mcv.Functions.csproj
+              dotnet build src/Mcv.Functions/Mcv.Functions.csproj --configuration Release
+            displayName: "Restore and Build Functions"
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: publish
+              arguments: "--configuration Release --output publish_output"
+              projects: "src/Mcv.Functions/Mcv.Functions.csproj"
+              publishWebProjects: false
+              modifyOutputPath: false
+              zipAfterPublish: false
+            displayName: "Publish Azure Functions"
+
+          - task: ArchiveFiles@2
+            displayName: "Archive files"
+            inputs:
+              rootFolderOrFile: "$(System.DefaultWorkingDirectory)/publish_output"
+              includeRootFolder: false
+              archiveFile: "$(System.DefaultWorkingDirectory)/func-$(Build.BuildId).zip"
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "$(System.DefaultWorkingDirectory)/func-$(Build.BuildId).zip"
+              artifactName: "drop"
+
+  - stage: AzureFunctionsDeploy
+    displayName: Deploy Azure Functions
+    jobs:
+      - job: DeployAzureFunctions
+        displayName: Deploy azure functions
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: DownloadBuildArtifacts@1
+            displayName: "Download function artifact"
+            inputs:
+              buildType: "current"
+              downloadType: "single"
+              artifactName: "drop"
+              itemPattern: "**/func-$(Build.BuildId).zip"
+              downloadPath: "$(System.ArtifactsDirectory)"
+
+          - task: AzureFunctionApp@2
+            displayName: "Deploy Azure Functions"
+            inputs:
+              connectedServiceNameARM: 'Mossos Dev'
+              appType: 'functionAppLinux'
+              appName: 'func-cv-dev-002'
+              package: '$(System.ArtifactsDirectory)/**/func-$(Build.BuildId).zip'
+              deploymentMethod: 'runFromPackage'
