@@ -12,10 +12,10 @@ namespace SonarQubeTestProject
             // Error 2: Nombre de variable poco claro
             int n = 5;
 
-            // Error 3: Usar un método sin validación
+            // Error 3: Usar un metodo sin validacion
             Console.WriteLine(DivideNumbers(10, 0));
 
-            // Error 4: Llamada a un método vacío
+            // Error 4: Llamada a un metodo vacio
             PrintMessage(null);
 
             // Error 5: Usar un tipo de variable inadecuado
@@ -24,17 +24,17 @@ namespace SonarQubeTestProject
             Console.ReadLine();
         }
 
-        // Error 6: Método con lógica de división por 0
+        // Error 6: Metodo con logica de division por 0
         static int DivideNumbers(int a, int b)
         {
-            return a / b;  // Error: División por cero
+            return a / b;  // Error: Division por cero
         }
 
-        // Error 7: Método innecesario o sin propósito
+        // Error 7: Metodo innecesario o sin proposito
         static void PrintMessage(string message)
         {
-            // Este método no hace nada y es innecesario
-            // Error: Se debe eliminar el método vacío o usarlo correctamente
+            // Este metodo no hace nada y es innecesario
+            // Error: Se debe eliminar el metodo vacio o usarlo correctamente
             if (message != null)
             {
                 Console.WriteLine(message);

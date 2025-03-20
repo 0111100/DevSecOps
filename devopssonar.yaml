@@ -40,14 +40,7 @@ stages:
               fi
             displayName: "Detect Language"
 
-          # Instalar SonarQube Scanner
-          - script: |
-              curl -Ls https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip -o sonar-scanner.zip
-              unzip sonar-scanner.zip
-              echo "$(pwd)/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
-            displayName: "Install SonarQube Scanner"
-
-          # Ejecutamos el analisis dependiendo del lenguaje detectado
+        # Ejecutamos el analisis dependiendo del lenguaje detectado
           - script: |
               case "$language" in
                 java)
